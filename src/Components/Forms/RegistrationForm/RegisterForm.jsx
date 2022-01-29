@@ -6,6 +6,9 @@ import {useHistory} from "react-router-dom";
 import {Redirect} from "react-router";
 import {useMutation} from "@apollo/client";
 import {USER_SIGNUP_MUTATION} from "../quries";
+import { ethers } from 'ethers';
+import NFT from './artifacts/contracts/NFT.sol/NFT.json';
+
 import {
     Button,
     FormControl,
@@ -22,7 +25,9 @@ import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import Footer from "../../LandingPage/Footer";
 
+const nftAddress = "0x2b4fe5Adc3382d48f472c6B9DF1DAC047495fe63";
 
+console.log(NFT);
 function RegisterForm() {
     const [values, setValues] = useState({
         role: '',
@@ -34,7 +39,85 @@ function RegisterForm() {
         showPassword: false,
     });
     const history = useHistory()
+    // for transfer operation
+    const[to,setTo]=useState('');
+    const[ens,setEnsTo]=useState('');
+    const [contract, setContract]=useState('undefined');
+    const [signer,setSigner] = useState('');
+    const [provider,setProvider] = useState('');
+    const [accounts,setAccounts] = useState([]);
+    const [images, setImages]=useState ([]);
+    const [idNft, setIdNft]=useState ([]);
 
+
+    async function connecter (){
+      const provider = new ethers.providers.Web3Provider(window.ethereum);
+      const signer = provider.getSigner();
+      const contract = new ethers.Contract(nftAddress, NFT.abi, provider)
+      setContract(contract);
+      setSigner(signer);
+      setProvider(provider);
+      console.log(contract);
+      console.log(signer);
+      const { ethereum } = window
+      		await ethereum.enable()
+      		if (!ethereum) {
+      			console.log("Make sure you have Metamask installed!")
+      			return
+      		} else {
+      			console.log("Wallet exists! We're ready to go!")
+      		}
+      		const accounts = await ethereum.request({ method: "eth_accounts" })
+      		if (accounts.length !== 0) {
+      			const account = accounts[0]
+            setAccounts(accounts);
+      			console.log("Found an authorized account: ", account)
+      		} else {
+      			console.log("No authorized account found")
+      		}
+    }
+
+    async function viewNfts(){
+      let owned = []
+      let uris=[]
+      let id = (await contract.connect(signer)._tokenIds());
+      console.log(id);
+      for (let i =1;i<=id.toNumber();i++){
+        let owner = (await contract.connect(signer).ownerOf(i));
+        let currAcc = ethers.utils.getAddress(accounts[0])
+        console.log(owner);
+
+        if (owner.toString() == currAcc){
+          owned.push(i)
+          uris.push(await contract.connect(signer).tokenURI(i))
+        }
+      }
+      setImages(uris)
+    }
+
+    async function mintNft (){
+      console.log('r');
+      await contract.connect(signer).createToken("https://media.istockphoto.com/vectors/welcome-to-the-team-hand-drawn-lettering-logo-icon-in-trendy-golden-vector-id1302839569?k=20&m=1302839569&s=612x612&w=0&h=rialOaZ0RMu1QsHjfUbZ0Q_d4LeAbIPz5V1SWpHi-yY=")
+      .then(data=>{
+        let pa = document.getElementById('status')
+        pa.innerHTML ='minted'
+      })
+      let tokenIdcurr = await contract.connect(signer)._tokenIds();
+      setIdNft(tokenIdcurr.toNumber())
+      let pass = false;
+      provider.getBalance(accounts[0]).then((balance) => {
+       const balanceInEth = ethers.utils.formatEther(balance)
+       if (balanceInEth > 0.00003){
+         pass = true;
+       }
+       else{
+         console.log('balance less than 0.0003 eth');
+       }
+      })
+      if (pass ==true) {
+        await contract.connect(signer).createToken("https://media.istockphoto.com/vectors/welcome-to-the-team-hand-drawn-lettering-logo-icon-in-trendy-golden-vector-id1302839569?k=20&m=1302839569&s=612x612&w=0&h=rialOaZ0RMu1QsHjfUbZ0Q_d4LeAbIPz5V1SWpHi-yY=")
+      }
+    }
     const handleChange = (prop) => (event) => {
         setValues({...values, [prop]: event.target.value});
     };
@@ -92,6 +175,7 @@ function RegisterForm() {
         <>
             <Header/>
             <Stack border={"red"} padding={"1rem"} alignItems={"center"} spacing={2}>
+            <Button  onClick={connecter}>Connect</Button>
                 <h1>Sign UP</h1>
                 <Stack width={"30vw"} alignContent={"center"} spacing={1.5}>
                     <TextField id="firstName" label="First Name" variant="outlined"
@@ -171,6 +255,16 @@ function RegisterForm() {
                     </FormControl>
                     <Button size={"small"} variant={"contained"} onClick={handleSignUp}>Sign Up</Button>
                 </Stack>
+                <Button  onClick={mintNft}>MINT</Button>
+                <p id ='status'></p>
+                <Button onClick = {viewNfts}>ViewNFTs </Button>
+
+                <div>
+                {
+                images.map((item,index) => (
+                  <img src ={item} height ="300"/>
+                ))}
+                </div>
             </Stack>
 
             <Footer>
