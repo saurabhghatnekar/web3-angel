@@ -1,12 +1,14 @@
 import styled from "styled-components";
-import { useState } from "react";
+import {useEffect, useState} from "react";
 import axios from "axios";
-import { Link } from "react-router-dom";
-import { Redirect } from 'react-router'
-
+import {Link} from "react-router-dom";
+import {Redirect} from 'react-router'
+import {CREATE_COMPANY_MUTATION} from "../queries_mutations";
+import {useMutation} from "@apollo/client";
+import {companies} from "../data";
 //styled-components-------
-  
- const Main1 = styled.div`
+
+const Main1 = styled.div`
 position: sticky;
 top: 0;
 height: 80px;
@@ -267,156 +269,188 @@ height: 140px;
 `
 
 function LoginForm() {
-  const [rec, setRec] = useState(false);
-  const [email, setEmail] = useState("");
-  const [pass, setPass] = useState("");
-  const [loading, setLoading] = useState(0);
+    const [rec, setRec] = useState(false);
+    const [email, setEmail] = useState("");
+    const [pass, setPass] = useState("");
+    // const [loading, setLoading] = useState(0);
+    const [createCompany, {loading, error, data}] = useMutation(CREATE_COMPANY_MUTATION, {
+        onCompleted: () => {
+            console.log("onCompleted", data)
+        },
+        onError: () => {
+            console.log("onError", error)
+        }
+    });
 
-  const handleSubmit = (event) => {
-    event.preventDefault();
-  };
+    useEffect(() => {
+        const l = companies.map(company => {
 
-  const handleLoading = (check) => {
-    if (!check) {
-      setLoading(1);
-      setTimeout(() => {
-          setLoading(3)
-      },2000);
-      setTimeout(() => {
-        setLoading(0)
-      }, 3000);
+
+            createCompany({
+                variables: {
+
+                    "name": company.name,
+                    "markets": company.location,
+                    "elevatorPitch": company.desc,
+                    "whyYourCompany": company.desc,
+                    "type": "DAO",
+                    "website": company.website,
+                }
+            })
+            // console.log(company)
+        })
+    }, [])
+
+    const handleSubmit = (event) => {
+        event.preventDefault();
+    };
+
+    {/*const handleLoading = (check) => {*/
     }
-    else {
-      setLoading(1);
-      setTimeout(() => {
-          setLoading(2)
-      },2000);
-      setTimeout(() => {
-        setLoading(0)
-        setRec(true);
-      }, 3000);
+    {/*    if (!check) {*/
     }
-  }
-
-  if (rec === true) {
-    return <Redirect to='/recruit/create-jobs' />;
-  }
-
-  const handleLogin = async () => {
-    let { data } = await axios.get("https://woowax.herokuapp.com/recruiter");
-    for (let i = 0; i < data.length; i++) {
-      if (data[i].email === email && data[i].pass === pass) {
-        setEmail("");
-        setPass("");
-        handleLoading(true);
-        return true;
-      }
-      else {
-        handleLoading(false)
-      }
-      // else {
-      //   alert("wrong credentials")
-      // }
+    {/*        setLoading(1);*/
     }
-  };
+    //         setTimeout(() => {
+    //             setLoading(3)
+    //         }, 2000);
+    //         setTimeout(() => {
+    //             setLoading(0)
+    //         }, 3000);
+    //     } else {
+    //         setLoading(1);
+    //         setTimeout(() => {
+    //             setLoading(2)
+    //         }, 2000);
+    //         setTimeout(() => {
+    //             setLoading(0)
+    //             setRec(true);
+    //         }, 3000);
+    //     }
+    // }
 
-  const handleEmail = (e) => {
-    setEmail(e.target.value);
-  };
-  const handlePass = (e) => {
-    setPass(e.target.value);
-  };
-  return (
-    <>
-      
-      <Main1>
-        <nav>
-          <Leftt>
-            <div><img src="logoRecruit.svg" alt="logo" /></div>
-            <div><a>Startup Jobs</a></div>
-            <div><a>Products</a></div>
-            <div><a>Pricing</a></div>
-          </Leftt>
+    if (rec === true) {
+        return <Redirect to='/recruit/create-jobs'/>;
+    }
 
-          <Rightt>
 
-            <div>
-               <Link to="/">
-              <div><a>Back to AngelList</a></div>
-               </Link>
-              <div><Link to="/loginrc">Log in</Link></div>
-              <div><Link to="/joinrc"><button>Join</button></Link></div>
-            </div>
+    const handleLogin = async () => {
+        let {data} = await axios.get("https://woowax.herokuapp.com/recruiter");
+        for (let i = 0; i < data.length; i++) {
+            if (data[i].email === email && data[i].pass === pass) {
+                setEmail("");
+                setPass("");
+                // handleLoading(true);
+                return true;
+            } else {
+                // handleLoading(false)
+            }
+            // else {
+            //   alert("wrong credentials")
+            // }
+        }
+    };
 
-          </Rightt>
-        </nav>
-      </Main1>
+    const handleEmail = (e) => {
+        setEmail(e.target.value);
+    };
+    const handlePass = (e) => {
+        setPass(e.target.value);
+    };
+    return (
+        <>
 
-      <Wrapper>
-        <div>
-          <div>
-            <h1>Log In</h1>
-            <FormCont>
-                <Left>
-                    <form onSubmit={handleSubmit}>
-                      <div>
-                        <input
-                          value={email}
-                          type="text"
-                          name="mobile"
-                          id="mobile"
-                          placeholder="Enter Mobile Number or Email"
-                          onChange={handleEmail}
-                        />
-                        <LeftEl>
-                      <input
-                        value={pass}
-                        type="password"
-                        name="password"
-                        id="password"
-                        placeholder="Enter Password"
-                        onChange={handlePass}
-                      />
-                        </LeftEl>
-                        <LeftEl>
-                          <button onClick={handleLogin}>
-                          {loading===1?"Loging...":loading===0?"Login":loading==3?"Failed":"Successful"}
-                          </button>
-                        </LeftEl>
-                        <LeftEl>
-                          <p>Forgot password?</p>
-                    </LeftEl>
+            <Main1>
+                <nav>
+                    <Leftt>
+                        <div><img src="logoRecruit.svg" alt="logo"/></div>
+                        <div><a>Startup Jobs</a></div>
+                        <div><a>Products</a></div>
+                        <div><a>Pricing</a></div>
+                    </Leftt>
+
+                    <Rightt>
+
+                        <div>
+                            <Link to="/">
+                                <div><a>Back to AngelList</a></div>
+                            </Link>
+                            <div><Link to="/loginrc">Log in</Link></div>
+                            <div><Link to="/joinrc">
+                                <button>Join</button>
+                            </Link></div>
+                        </div>
+
+                    </Rightt>
+                </nav>
+            </Main1>
+
+            <Wrapper>
+                <div>
+                    <div>
+                        <h1>Log In</h1>
+                        <FormCont>
+                            <Left>
+                                <form onSubmit={handleSubmit}>
+                                    <div>
+                                        <input
+                                            value={email}
+                                            type="text"
+                                            name="mobile"
+                                            id="mobile"
+                                            placeholder="Enter Mobile Number or Email"
+                                            onChange={handleEmail}
+                                        />
+                                        <LeftEl>
+                                            <input
+                                                value={pass}
+                                                type="password"
+                                                name="password"
+                                                id="password"
+                                                placeholder="Enter Password"
+                                                onChange={handlePass}
+                                            />
+                                        </LeftEl>
+                                        <LeftEl>
+                                            <button onClick={handleLogin}>
+                                                {loading === 1 ? "Loging..." : loading === 0 ? "Login" : loading == 3 ? "Failed" : "Successful"}
+                                            </button>
+                                        </LeftEl>
+                                        <LeftEl>
+                                            <p>Forgot password?</p>
+                                        </LeftEl>
+                                    </div>
+                                </form>
+                            </Left>
+                            <Right>
+                                <div>
+                                    <div>G</div>
+                                    <div>Log in with Google</div>
+                                </div>
+                            </Right>
+                        </FormCont>
+                        <Space></Space>
+                        <FormEnd>
+                            <p>Need an account? <a href="/"> Log In.. </a></p>
+                        </FormEnd>
                     </div>
-                      </form>
-                </Left>
-                <Right>
-                      <div>
-                        <div>G</div><div>Log in with Google</div>
-                      </div>
-                </Right>    
-            </FormCont>
-            <Space></Space>
-            <FormEnd>
-              <p>Need an account? <a href="/"> Log In.. </a> </p>
-            </FormEnd>
-          </div>
-        </div>
-      </Wrapper>
-      <Footer>
-        <div>
-          <div>
-            <a href="/" className="FooterLinks">Help</a>
-            <a href="/" className="FooterLinks">Blog</a>
-            <a href="/" className="FooterLinks">Twiter</a>
-            <a href="/" className="FooterLinks">Terms & Risks</a>
-            <a href="/" className="FooterLinks">Privacy Policy & Cookies</a>
-            <a href="/" className="FooterLinks">Unsubscribe</a>
-            <a href="/" className="FooterLinks">Press</a>
-          </div>
-        </div>
-      </Footer>
-    </>
-  );
+                </div>
+            </Wrapper>
+            <Footer>
+                <div>
+                    <div>
+                        <a href="/" className="FooterLinks">Help</a>
+                        <a href="/" className="FooterLinks">Blog</a>
+                        <a href="/" className="FooterLinks">Twiter</a>
+                        <a href="/" className="FooterLinks">Terms & Risks</a>
+                        <a href="/" className="FooterLinks">Privacy Policy & Cookies</a>
+                        <a href="/" className="FooterLinks">Unsubscribe</a>
+                        <a href="/" className="FooterLinks">Press</a>
+                    </div>
+                </div>
+            </Footer>
+        </>
+    );
 }
 
 export default LoginForm;

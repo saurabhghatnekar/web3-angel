@@ -1,12 +1,26 @@
 import styles from "./nav.module.css"
 import { useState,useEffect } from "react"
+import {useHistory} from "react-router-dom";
+
 export function Nav({handleSearch}) {
     const [user,setUser]=useState({})
+    const history = useHistory()
 
     useEffect(()=>{
-        const user =JSON.parse(localStorage.getItem("user")) 
+        const user = JSON.parse(localStorage.getItem("user"))
+        if(user){
+            setUser(user)
+        }else {
+            history.push("/login")
+        }
         setUser(user)
     },[])
+
+    const handleLogout = () => {
+        localStorage.removeItem("user")
+        history.push("/login")
+    }
+
     return (
         <div className={styles.wrapper}>
             <div className={styles.main}>
@@ -20,8 +34,8 @@ export function Nav({handleSearch}) {
                     <div>
                         <img src="https://cdn.iconscout.com/icon/free/png-256/face-1659511-1410033.png" alt="" />
                         <div>
-                            <p>{user.full_name}</p>
-                            <span>Ready to interview</span>
+                            <p>{user.firstName}</p>
+                            <button onClick={handleLogout}>Logout</button>
                         </div>
                     </div>
                 </div>

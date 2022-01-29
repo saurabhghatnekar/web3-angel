@@ -62,20 +62,20 @@ export function AngelList() {
   }
   return (
     <>
-      <Nav handleSearch={handleSearch}></Nav>
+      <Nav handleSearch={handleSearch}/>
       <Main>
         <div>
-          <SideBar></SideBar>
+          <SideBar/>
         </div>
         <Switch>
           <Route path={`${path}/applied`}>
-            <Applied></Applied>
+            <Applied/>
           </Route>
           <Route path={`${path}/assessment`}>
-            <Assessment></Assessment>
+            <Assessment/>
           </Route>
           <Route path="/jobs">
-            <Jobs company={company} lastJobRef={lastJobRef} loading={loading}></Jobs>
+            <Jobs company={company} lastJobRef={lastJobRef} loading={loading}/>
           </Route>
         </Switch>
       </Main>

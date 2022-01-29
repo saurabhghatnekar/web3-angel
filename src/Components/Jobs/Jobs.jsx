@@ -4,6 +4,7 @@ const style ={
     width:"100%"
 }
 export function Jobs({company,lastJobRef,loading}){
+    console.log(company)
     return(
         <div>
             {company.map((el,index)=>{

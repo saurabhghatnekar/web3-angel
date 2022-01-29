@@ -238,7 +238,7 @@ export function StartUpsPage() {
             ))}
         </div>
       </div>
-      <FooterMain></FooterMain>
+      <FooterMain/>
 
       </div>
     </Wrapper>

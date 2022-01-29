@@ -1,11 +1,31 @@
 import styled from "styled-components";
-import { useState } from "react";
+import {useEffect, useState} from "react";
 import axios from "axios";
 import Header from "../../LandingPage/Header";
-import { Redirect } from 'react-router'
+import {Redirect} from 'react-router'
+import {gql} from "@apollo/client";
+import {useLazyQuery, useMutation} from "@apollo/client";
+
+
+import {USER_SIGNIN_MUTATION} from "../quries";
+import {defineArguments} from "graphql/type/definition";
+import {
+    Button,
+    FormControl,
+    FormControlLabel,
+    FormLabel, IconButton, InputAdornment,
+    InputLabel,
+    OutlinedInput,
+    Radio,
+    RadioGroup,
+    Stack,
+    TextField
+} from "@mui/material";
+import VisibilityOff from "@mui/icons-material/VisibilityOff";
+import Visibility from "@mui/icons-material/Visibility";
 
 //styled-components-------
-  
+
 const Wrapper = styled.div`
   *{padding: 0;
   margin: 0;
@@ -162,135 +182,142 @@ height: 140px;
   }
 `
 
+
+//graphql query
+
+
 function LoginForm() {
-  const [jobs, setJobs] = useState(false);
-  const [email, setEmail] = useState("");
-  const [pass, setPass] = useState("");
-  const [loading, setLoading] = useState(0);
-  
-  const handleLoading = (check) => {
-    if (!check) {
-      setLoading(1);
-      setTimeout(() => {
-          setLoading(3)
-      },2000);
-      setTimeout(() => {
-        setLoading(0)
-      }, 3000);
+    const [jobs, setJobs] = useState(false);
+    const [values, setValues] = useState({
+        password: '',
+        email: '',
+        showPassword: false,
+    });
+    const [userSignIn, {loading, error, data}] = useMutation(USER_SIGNIN_MUTATION, {
+        onCompleted: data1 => {
+            console.log(data1);
+            localStorage.setItem('token', data1.signIn.token);
+            localStorage.setItem('user', JSON.stringify(data1.signIn.user));
+            setJobs(true);
+        }
+    });
+
+    const handleChange = (prop) => (event) => {
+        setValues({...values, [prop]: event.target.value});
+    };
+
+    const isLoggedIn = () => {
+        const user = JSON.parse(localStorage.getItem("user"))
+        console.log("user",user)
+        if (user) {
+            setJobs(true);
+            return true;
+        } else {
+            return false;
+        }
+    };
+
+    useEffect(() => {
+        isLoggedIn()
+    });
+
+    const handleClickShowPassword = () => {
+        setValues({
+            ...values,
+            showPassword: !values.showPassword,
+        });
+    };
+
+    const handleMouseDownPassword = (event) => {
+        event.preventDefault();
+    };
+
+    if (jobs === true) {
+        return <Redirect to='/jobs'/>;
     }
-    else {
-      setLoading(1);
-      setTimeout(() => {
-          setLoading(2)
-      },2000);
-      setTimeout(() => {
-        setLoading(0)
-        setJobs(true);
-      }, 3000);
-    }
-  }
+    const handleLogin = async () => {
 
-  const handleSubmit = (event) => {
-    event.preventDefault();
-  };
+        // await userSignIn({
+        //     variables: {
+        //         email: values.email,
+        //         password: values.password
+        //     }
+        // });
+        // console.log("error", error)
+        // console.log("data", data)
 
-  if (jobs === true) {
-    return <Redirect to='/jobs' />;
-  }
-  const handleLogin = async () => {
-    let { data } = await axios.get("https://woowax.herokuapp.com/user");
-    
-    for (let i = 0; i < data.length; i++) {
-      if (data[i].email === email && data[i].pass === pass) {
-        console.log(data[i])
-        localStorage.setItem("user", JSON.stringify(data[i]))
-        handleLoading(true);
-        return true;
-      }
-      else {
-        handleLoading(false);
-      }
-    }
-  };
+        try {
+            console.log(values)
+            await userSignIn({
+                variables: {
+                    email: values.email,
+                    password: values.password
+                }
+            });
+
+        } catch (err) {
+            console.log("err", err);
+            console.log("error", error)
+        }
+    };
 
 
+    return (
+        <>
+            <Header/>
+            <Stack border={"red"} padding={"1rem"} alignItems={"center"} spacing={2}>
+                <h1>Login</h1>
+                <Stack width={"30vw"} alignContent={"center"} spacing={1.5}>
+                    <TextField id="email" label="Email" variant="outlined"
+                               type="text"
+                               name="email"
+                               key="email"
+                               placeholder="Email"
+                               required
+                               onChange={handleChange("email")}
+                    />
 
-  const handleEmail = (e) => {
-    setEmail(e.target.value);
-  };
-  const handlePass = (e) => {
-    setPass(e.target.value);
-  };
-  return (
-    <>
-      
-      <Header />
-
-      <Wrapper>
-        <div>
-          <div>
-            <h1>Log In</h1>
-            <FormCont>
-                <Left>
-                    <form onSubmit={handleSubmit}>
-                      <div>
-                        <input
-                          value={email}
-                          type="text"
-                          name="mobile"
-                          id="mobile"
-                          placeholder="Enter Mobile Number or Email"
-                          onChange={handleEmail}
+                    <FormControl variant="outlined">
+                        <InputLabel htmlFor="outlined-adornment-password">Password</InputLabel>
+                        <OutlinedInput
+                            id="outlined-adornment-password"
+                            type={values.showPassword ? 'text' : 'password'}
+                            value={values.password}
+                            onChange={handleChange('password')}
+                            endAdornment={
+                                <InputAdornment position="end">
+                                    <IconButton
+                                        aria-label="toggle password visibility"
+                                        onClick={handleClickShowPassword}
+                                        onMouseDown={handleMouseDownPassword}
+                                        edge="end"
+                                    >
+                                        {values.showPassword ? <VisibilityOff/> : <Visibility/>}
+                                    </IconButton>
+                                </InputAdornment>
+                            }
+                            label="Password"
                         />
-                        <LeftEl>
-                      <input
-                        value={pass}
-                        type="password"
-                        name="password"
-                        id="password"
-                        placeholder="Enter Password"
-                        onChange={handlePass}
-                      />
-                        </LeftEl>
-                        <LeftEl>
-                          <button onClick={handleLogin}>
-                          {loading===1?"Logging...":loading===0?"Login":loading==3?"Failed":"Successful"}
-                          </button>
-                        </LeftEl>
-                        <LeftEl>
-                          <p>Forgot password?</p>
-                    </LeftEl>
+                    </FormControl>
+                    <Button size={"small"} variant={"contained"} onClick={handleLogin}>Login</Button>
+                </Stack>
+            </Stack>
+
+            <Footer>
+                <div>
+                    <div>
+                        <a href="/" className="FooterLinks">Help</a>
+                        <a href="/" className="FooterLinks">Blog</a>
+                        <a href="/" className="FooterLinks">Twiter</a>
+                        <a href="/" className="FooterLinks">Terms & Risks</a>
+                        <a href="/" className="FooterLinks">Privacy Policy & Cookies</a>
+                        <a href="/" className="FooterLinks">Unsubscribe</a>
+                        <a href="/" className="FooterLinks">Press</a>
                     </div>
-                      </form>
-                </Left>
-                <Right>
-                      <div>
-                        <div>G</div><div>Log in with Google</div>
-                      </div>
-                </Right>    
-            </FormCont>
-            <Space></Space>
-            <FormEnd>
-              <p>Need an account? <a href="/"> Log In.. </a> </p>
-            </FormEnd>
-          </div>
-        </div>
-      </Wrapper>
-      <Footer>
-        <div>
-          <div>
-            <a href="/" className="FooterLinks">Help</a>
-            <a href="/" className="FooterLinks">Blog</a>
-            <a href="/" className="FooterLinks">Twiter</a>
-            <a href="/" className="FooterLinks">Terms & Risks</a>
-            <a href="/" className="FooterLinks">Privacy Policy & Cookies</a>
-            <a href="/" className="FooterLinks">Unsubscribe</a>
-            <a href="/" className="FooterLinks">Press</a>
-          </div>
-        </div>
-      </Footer>
-    </>
-  );
+                </div>
+            </Footer>
+        </>
+    );
 }
 
 export default LoginForm;
